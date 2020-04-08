@@ -4,8 +4,11 @@
 Curseforge hates me but I found a workaround
 This is it, my messterpiece
 
-I should put the version in the modlist file
-The regex thing needs work, it is not flexable
+Todo:
+Manual weighting
+Manual version spec
+Delete removed mods
+Better modlist commenting
 """
 
 import json
@@ -26,12 +29,13 @@ modDir = "mods" # Don't use ./
 
 def main():
 	print("Gathering important stuff, this might take a while")
-	mods = readModLines(modfile)
+	mods = readMods(modfile)
 	nameLinks = getNameLinks(mods, versionparam)
 	pprint(nameLinks)
 	downloadMods(nameLinks)
 
 	print("\nDone!")
+
 
 def downloadMods(nameLinks):
 	# Make mod dir if not exist
@@ -70,7 +74,7 @@ def downloadFile(url, out):
 
 
 # Returns a list of mods to be downloaded
-def readModLines(path):
+def readMods(path):
 	theFile = open(path)
 	contents = theFile.readlines()
 	theFile.close()
