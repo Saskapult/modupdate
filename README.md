@@ -7,6 +7,7 @@ I hope that this is understandable.
 - Run "pip install -r requirements.txt" to install the required packages.
 - Create a new Minecraft instance and install Forge/Fabric.
 - Place the modupdate.py file in your ".minecraft" directory.
+- Create a file called "moddata.txt", fill it with curseforge links. (https://www.curseforge.com/minecraft/mc-mods/MODNAME)
 - Edit the versionparam dictionary with your desired version. (this may be found inside of modupdate.py) (Weight more desirable parameters with larger numbers)
 - Make a sacrafice to the number gods to boost your chances of success.
 - Run the thing!
