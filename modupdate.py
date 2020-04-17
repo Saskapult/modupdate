@@ -136,7 +136,7 @@ def getFileId(files, version):
 			#print("\tScanning %s" % filey["name"])
 			for v in version:
 				if v in fireversions:
-					newAccuracy += versionparam[version]
+					newAccuracy += version[v]
 					#print("\t\tAdding %s because it has %s, total is %i" % (bonus, v, newAccuracy))
 					continue # Don't count multiple times
 				
