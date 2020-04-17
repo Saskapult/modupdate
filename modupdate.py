@@ -5,10 +5,8 @@ Curseforge hates me but I found a workaround
 This is it, my messterpiece
 
 Todo:
-Manual weighting
 Manual version spec
 Delete removed mods
-Better modlist commenting
 """
 
 import json
@@ -21,10 +19,11 @@ from termcolor import colored
 
 modfile = "modlist.txt"
 trackerfile = "modtracker.txt"
-versionparam = ["1.14.4", "Forge"] # Preferred terms should go first
+modDir = "mods" # Don't use ./
+versionparam = {"1.14.4":2, "Forge":1} # Preferred terms should be weighted more highly
+
 exreg = r"([^\/]*)$"
 apithing = "https://api.cfwidget.com/minecraft/mc-mods/"
-modDir = "mods" # Don't use ./
 
 
 def main():
@@ -135,11 +134,9 @@ def getFileId(files, version):
 			newAccuracy = 0
 
 			#print("\tScanning %s" % filey["name"])
-			bonus = 1+len(version) # Prefer the first params because I hate this
 			for v in version:
-				bonus -= 1
 				if v in fireversions:
-					newAccuracy += bonus
+					newAccuracy += versionparam[version]
 					#print("\t\tAdding %s because it has %s, total is %i" % (bonus, v, newAccuracy))
 					continue # Don't count multiple times
 				
@@ -150,8 +147,8 @@ def getFileId(files, version):
 			elif newAccuracy == accuracy and filey["id"] > fileid:
 				fileid = filey["id"]
 				accuracy = newAccuracy
-		if accuracy == adapt(len(version)): # I HATE THIS
-			print("\tPerfectly matched %s with id %s with accuracy %i/%i" % (release, fileid, accuracy, adapt(len(version))))
+		if accuracy == sum(version.values()): # I HATE THIS
+			print("\tPerfectly matched %s with id %s with accuracy %i/%i" % (release, fileid, accuracy, sum(version.values())))
 			return fileid # It's as good as we will find
 		elif fileid != 0:
 			print("\tMatched %s with id %s with accuracy %i/%i" % (release, fileid, accuracy, len(version)))
@@ -168,9 +165,6 @@ def getFileId(files, version):
 def getJSON(url):
 	r = requests.get(url)
 	return r.json()
-
-def adapt(n):
-	return n*(n+1)/2
 
 
 if __name__ == "__main__":
