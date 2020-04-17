@@ -80,7 +80,8 @@ def readMods(path):
 	theFile.close()
 	filtered = []
 	for line in contents:
-		if line.startswith("#") or not line.strip():
+		line = line.split('#',1)[0].strip()
+		if not line:
 			continue 
 		line = re.search(exreg, line, re.M|re.I).group(1).strip()
 		filtered.append(line)
