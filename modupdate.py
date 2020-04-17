@@ -1,13 +1,4 @@
-#!/usr/bin/env python3
-
-"""
-Curseforge hates me but I found a workaround
-This is it, my messterpiece
-
-Todo:
-Manual version spec
-Delete removed mods
-"""
+#!/bin/env python3
 
 import json
 from pprint import pprint
@@ -15,15 +6,16 @@ import re
 import requests
 import wget
 import os
-from termcolor import colored
 
-modfile = "modlist.txt"
-trackerfile = "modtracker.txt"
+
+modfile = "moddata.txt"
+trackerfile = modfile.split(".")[0] + "_tracker.txt"
 modDir = "mods" # Don't use ./
 versionparam = {"1.14.4":2, "Forge":1} # Preferred terms should be weighted more highly
 
 exreg = r"([^\/]*)$"
 apithing = "https://api.cfwidget.com/minecraft/mc-mods/"
+headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'} # Required to prevent 403
 
 
 def main():
@@ -47,9 +39,17 @@ def downloadMods(nameLinks):
 		with open(trackerfile) as j:
 			oldlinks = json.load(j)
 
+	# Remove the removed stuff
+	for modname in oldlinks.keys():
+		if modname not in nameLinks.keys():
+			print("Removing %s" % modname)
+			loc = modDir + "/%s.jar" % modname
+			os.remove(loc) # Remove old mod
+			# remove
+
 	# Download loop
 	for link in nameLinks.keys():
-		loc =  modDir + "/%s.jar" % link
+		loc = modDir + "/%s.jar" % link
 		if link in oldlinks.keys():
 			if nameLinks[link] == oldlinks[link]:
 				continue # Skip if not new and no update available
@@ -57,7 +57,7 @@ def downloadMods(nameLinks):
 				print("Updating %s" % link)
 				os.remove(loc) # Remove old mod
 		else:
-			print("Downloading new mod %s" % link) # New mod
+			print("Downloading %s" % link) # New mod
 		downloadFile(nameLinks[link], loc) # Download the stuff
 
 	# Update tracker
@@ -89,7 +89,9 @@ def readMods(path):
 
 # It's easy
 def errorMsg(msg):
-	print(colored(msg, 'red'))
+	print("\n\tERROR")
+	print(msg)
+	print("\tERROR\n")
 
 
 # Gets the links to the files
@@ -113,7 +115,6 @@ def getNameLinks(modlist, version):
 		fid = getFileId(jdata["files"], version)
 		# Retrieve the actual download link
 		protodirectlink = "https://addons-ecs.forgesvc.net/api/v2/addon/%s/file/%s/download-url" % (mid, fid) # The link that gets the link
-		headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'} # Required to prevent 403
 		directlink = requests.get(protodirectlink, headers=headers).text
 		nameIdDict[mod] = directlink
 		
