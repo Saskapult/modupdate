@@ -152,7 +152,7 @@ def getFileId(files, version):
 			print("\tPerfectly matched %s with id %s with accuracy %i/%i" % (release, fileid, accuracy, sum(version.values())))
 			return fileid # It's as good as we will find
 		elif fileid != 0:
-			print("\tMatched %s with id %s with accuracy %i/%i" % (release, fileid, accuracy, len(version)))
+			print("\tMatched %s with id %s with accuracy %i/%i" % (release, fileid, accuracy, sum(version.values())))
 			if outerAccuracy < accuracy:
 				print("\treplacing outer")
 				outerAccuracy = accuracy
