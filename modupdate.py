@@ -11,7 +11,7 @@ import os
 modfile = "moddata.txt"
 trackerfile = modfile.split(".")[0] + "_tracker.txt"
 modDir = "mods" # Don't use ./
-versionparam = {"1.16":2, "1.16.2":2, "Fabric":1} # Preferred terms should be weighted more highly
+versionparam = {} # Preferred terms should be weighted more highly
 
 exreg = r"([^\/]*)$"
 apithing = "https://api.cfwidget.com/minecraft/mc-mods/"
@@ -39,7 +39,11 @@ def readData(path):
 	for line in contents:
 		# Version info reader
 		if line.startswith("{"):
-			minfo = json.loads(line)
+			try:
+				minfo = json.loads(line)
+			except ValueError:
+				print("Version data could not be interperted")
+				exit(1)
 			continue
 		
 		line = line.split('#',1)[0].strip()
@@ -59,29 +63,32 @@ def getNameLinks(modlist, version):
 	notFound = []
 	for mod in modlist:
 		print("Finding %s" % mod)
-		# Prepare id
+		
+		# Retrieve the JSON data
 		link = apithing + mod
-		#print("Getting data from %s" % link)
 		jdata = getJSON(link)
 		if "error" in jdata.keys():
-			print("")
 			textyyy = mod + " - " + jdata["error"]
-			errorMsg("Could not find %s" % textyyy)
-			continue
-		# Make entry
+			print("ERROR: Failure retrieving %s" % textyyy)
+			exit(1)
+
+		# Get the file id
 		mid = jdata["id"]
 		fid = getFileId(jdata["files"], version)
-		if fid == 0: # Thing fails
-			errorMsg("Could not find %s" % mod)
+		if fid == 0: # Was unable to find a file
+			print("WARNING: Could not find %s" % mod)
 			notFound.append(mod)
 			continue
+		
 		# Retrieve the actual download link
 		protodirectlink = "https://addons-ecs.forgesvc.net/api/v2/addon/%s/file/%s/download-url" % (mid, fid) # The link that gets the link
 		directlink = requests.get(protodirectlink, headers=headers).text
 		
+		# Get the proper file name
 		filename = directlink.split("/")
 		filename = filename[len(filename)-1]
 		
+		# Make the entry
 		nameIdDict[filename] = directlink
 		
 	return nameIdDict, notFound
@@ -122,20 +129,6 @@ def downloadMods(nameLinks):
 	# Update tracker
 	with open(trackerfile, "w") as t:
 		json.dump(nameLinks, t)
-
-
-# Downloads a file
-def downloadFile(url, out):
-	print("DL: %s" % url)
-	wget.download(url, out)
-	print()
-
-
-# It's easy
-def errorMsg(msg):
-	print("\n\tERROR")
-	print(msg)
-	print("\tERROR\n")
 
 
 # Finds a link to a mod file based on version specs
@@ -180,7 +173,14 @@ def getFileId(files, version):
 	if outerAccuracy == 0:
 		return 0
 	return outerFid
+
 	
+# Downloads a file
+def downloadFile(url, out):
+	print("DL: %s" % url)
+	wget.download(url, out)
+	print()
+
 
 # It gets JSON data
 def getJSON(url):
