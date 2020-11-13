@@ -11,7 +11,7 @@ import os
 modfile = "moddata.txt"
 trackerfile = modfile.split(".")[0] + "_tracker.txt"
 modDir = "mods" # Don't use ./
-versionparam = {"1.14.4":2, "Forge":1} # Preferred terms should be weighted more highly
+versionparam = {"1.16":2, "1.16.2":2, "Fabric":1} # Preferred terms should be weighted more highly
 
 exreg = r"([^\/]*)$"
 apithing = "https://api.cfwidget.com/minecraft/mc-mods/"
@@ -20,14 +20,75 @@ headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleW
 
 def main():
 	print("Gathering important stuff, this might take a while")
-	mods = readMods(modfile)
-	nameLinks = getNameLinks(mods, versionparam)
+	versionparam, mods = readData(modfile)
+	nameLinks, notFound = getNameLinks(mods, versionparam)
 	pprint(nameLinks)
-	downloadMods(nameLinks)
+	print("But we couldn't find:")
+	pprint(notFound)
+	#downloadMods(nameLinks)
 
 	print("\nDone!")
 
 
+# Returns a list of mods to be downloaded
+def readData(path):
+	theFile = open(path)
+	contents = theFile.readlines()
+	theFile.close()
+	filtered = []
+	minfo = versionparam
+	for line in contents:
+		# Version info reader
+		if line.startswith("{"):
+			minfo = json.loads(line)
+			continue
+		
+		line = line.split('#',1)[0].strip()
+		if not line:
+			continue 
+		line = re.search(exreg, line, re.M|re.I).group(1).strip()
+		filtered.append(line)
+		print(line)
+	return minfo, filtered
+
+
+# Gets the links to the files
+# Returns a dictionary mapping the names to the links
+def getNameLinks(modlist, version):
+	# Build the name and id dict
+	nameIdDict = {}
+	notFound = []
+	for mod in modlist:
+		print("Finding %s" % mod)
+		# Prepare id
+		link = apithing + mod
+		#print("Getting data from %s" % link)
+		jdata = getJSON(link)
+		if "error" in jdata.keys():
+			print("")
+			textyyy = mod + " - " + jdata["error"]
+			errorMsg("Could not find %s" % textyyy)
+			continue
+		# Make entry
+		mid = jdata["id"]
+		fid = getFileId(jdata["files"], version)
+		if fid == 0: # Thing fails
+			errorMsg("Could not find %s" % mod)
+			notFound.append(mod)
+			continue
+		# Retrieve the actual download link
+		protodirectlink = "https://addons-ecs.forgesvc.net/api/v2/addon/%s/file/%s/download-url" % (mid, fid) # The link that gets the link
+		directlink = requests.get(protodirectlink, headers=headers).text
+		
+		filename = directlink.split("/")
+		filename = filename[len(filename)-1]
+		
+		nameIdDict[filename] = directlink
+		
+	return nameIdDict, notFound
+
+
+# Sort out the downloading
 def downloadMods(nameLinks):
 	# Make mod dir if not exist
 	if not os.path.exists(modDir):
@@ -45,7 +106,6 @@ def downloadMods(nameLinks):
 			print("Removing %s" % modname)
 			loc = modDir + "/%s.jar" % modname
 			os.remove(loc) # Remove old mod
-			# remove
 
 	# Download loop
 	for link in nameLinks.keys():
@@ -72,21 +132,6 @@ def downloadFile(url, out):
 	print()
 
 
-# Returns a list of mods to be downloaded
-def readMods(path):
-	theFile = open(path)
-	contents = theFile.readlines()
-	theFile.close()
-	filtered = []
-	for line in contents:
-		line = line.split('#',1)[0].strip()
-		if not line:
-			continue 
-		line = re.search(exreg, line, re.M|re.I).group(1).strip()
-		filtered.append(line)
-	return filtered
-
-
 # It's easy
 def errorMsg(msg):
 	print("\n\tERROR")
@@ -94,34 +139,8 @@ def errorMsg(msg):
 	print("\tERROR\n")
 
 
-# Gets the links to the files
-# Returns a dictionary mapping the names to the links
-def getNameLinks(modlist, version):
-	# Build the name and id dict
-	nameIdDict = {}
-	for mod in modlist:
-		print("Finding %s" % mod)
-		# Prepare id
-		link = apithing + mod
-		#print("Getting data from %s" % link)
-		jdata = getJSON(link)
-		if "error" in jdata.keys():
-			print("")
-			textyyy = mod + " - " + jdata["error"]
-			errorMsg("Could not find %s" % textyyy)
-			continue
-		# Make entry
-		mid = jdata["id"]
-		fid = getFileId(jdata["files"], version)
-		# Retrieve the actual download link
-		protodirectlink = "https://addons-ecs.forgesvc.net/api/v2/addon/%s/file/%s/download-url" % (mid, fid) # The link that gets the link
-		directlink = requests.get(protodirectlink, headers=headers).text
-		nameIdDict[mod] = directlink
-		
-	return nameIdDict
-
-
 # Finds a link to a mod file based on version specs
+# Returns 0 if not found
 def getFileId(files, version):
 	fileid = 0 # should use date uploaded
 	outerAccuracy = 0
@@ -159,6 +178,8 @@ def getFileId(files, version):
 				outerFid = fileid
 		else:
 			print("\tNo %s found" % release)
+	if outerAccuracy == 0:
+		return 0
 	return outerFid
 	
 
