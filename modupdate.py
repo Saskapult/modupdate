@@ -11,7 +11,6 @@ import os
 modfile = "moddata.txt"
 trackerfile = modfile.split(".")[0] + "_tracker.txt"
 modDir = "mods" # Don't use ./
-versionparam = {} # Preferred terms should be weighted more highly
 
 exreg = r"([^\/]*)$"
 apithing = "https://api.cfwidget.com/minecraft/mc-mods/"
@@ -34,8 +33,9 @@ def readData(path):
 	theFile = open(path)
 	contents = theFile.readlines()
 	theFile.close()
+	
 	filtered = []
-	minfo = versionparam
+	minfo = {}
 	for line in contents:
 		# Version info reader
 		if line.startswith("{"):
@@ -46,12 +46,20 @@ def readData(path):
 				exit(1)
 			continue
 		
+		# Comment filtration
 		line = line.split('#',1)[0].strip()
 		if not line:
 			continue 
 		line = re.search(exreg, line, re.M|re.I).group(1).strip()
+
 		filtered.append(line)
-		print(line)
+	print("Read %i mods" % len(filtered))
+	
+	# Check that versionparams exist
+	if len(minfo) == 0:
+		print("ERROR: Version params are empty")
+		exit(1)
+	
 	return minfo, filtered
 
 
@@ -174,7 +182,7 @@ def getFileId(files, version):
 		return 0
 	return outerFid
 
-	
+
 # Downloads a file
 def downloadFile(url, out):
 	print("DL: %s" % url)
