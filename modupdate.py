@@ -25,8 +25,7 @@ def main():
 	pprint(nameLinks)
 	print("But we couldn't find:")
 	pprint(notFound)
-	#downloadMods(nameLinks)
-
+	downloadMods(nameLinks)
 	print("\nDone!")
 
 
