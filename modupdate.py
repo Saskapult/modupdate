@@ -22,8 +22,8 @@ def main():
 	versionparam, mods = readData(modfile)
 	mods.sort()
 	nameLinks, notFound = getNameLinks(mods, versionparam)
-	pprint(nameLinks)
-	print("But we couldn't find:")
+	#pprint(nameLinks)
+	print("Couldn't find:")
 	pprint(notFound)
 	downloadMods(nameLinks)
 	print("\nDone!")
@@ -70,13 +70,13 @@ def readData(path):
 def getNameLinks(modlist, version):
 	# Build the name and id dict
 	nameIdDict = {}
-	notFound = []
+	notFound = {}
 	for mod in modlist:
 		print("Finding %s" % mod)
 		
 		# Retrieve the JSON data
 		link = apithing + mod
-		print(link)
+		#print(link)
 		jdata = getJSON(link)
 		if "error" in jdata.keys():
 			textyyy = mod + " - " + jdata["error"]
@@ -88,7 +88,7 @@ def getNameLinks(modlist, version):
 		fid = getFileId(jdata["files"], version)
 		if fid == 0: # Was unable to find a file
 			print("WARNING: Could not find %s" % mod)
-			notFound.append(mod)
+			notFound[mod] = link
 			continue
 		
 		# Retrieve the actual download link
