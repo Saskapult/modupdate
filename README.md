@@ -2,9 +2,7 @@
 I wanted to download things from curseforge automatically but this was not so easy.
 There were not many scripts online that I could go to for guidance, so I'm putting this up to maybe help people.
 
-Update:
-It seems that the api I have used redirects requests for certain fabric mods to their forge counterparts.
-I absolutely hate this.
+Big thanks to cfwidget for making any of this possible, I am very grateful.
 
 # Usage
 I hope that this is understandable.
@@ -17,3 +15,7 @@ I hope that this is understandable.
 - Make a sacrifice to the number gods to boost your chances of success.
 - Run the thing!
 
+# Issues
+It seems that the cfwidget api redirects requests for certain fabric mods to their forge counterparts.
+
+Some mod authors have not included version tags for their files and this breaks the program.

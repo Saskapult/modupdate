@@ -55,6 +55,7 @@ def readData(path):
 		line = re.search(exreg, line, re.M|re.I).group(1).strip()
 
 		filtered.append(line)
+	
 	print("Read %i mods" % len(filtered))
 	
 	# Check that versionparams exist
@@ -145,24 +146,29 @@ def downloadMods(nameLinks):
 # Finds a link to a mod file based on version specs
 # Returns 0 if not found
 def getFileId(files, version):
-	fileid = 0 # should use date uploaded
+	fileid = 0
 	outerAccuracy = 0
 	outerFid = 0
 	for release in ["release", "beta", "alpha"]:
 		accuracy = 0
+
+		# This *should* perfer the latest release because of the api ordering
 		for filey in files:
+			# Skip if not matching the release type
 			if filey["type"] != release:
-				continue # Skip if not matching the release type
+				continue 
+			
+			# Check version tags
 			fireversions = filey["versions"]
 			newAccuracy = 0
-
 			#print("\tScanning %s" % filey["name"])
 			for v in version:
 				if v in fireversions:
 					newAccuracy += version[v]
 					#print("\t\tAdding %s because it has %s, total is %i" % (bonus, v, newAccuracy))
-					continue # Don't count multiple times
-				
+					#continue # Don't count multiple times
+			
+			# See if it's good
 			#print(fireversions, " - ", newAccuracy)
 			if newAccuracy > accuracy:
 				fileid = filey["id"]
@@ -170,19 +176,28 @@ def getFileId(files, version):
 			elif newAccuracy == accuracy and filey["id"] > fileid:
 				fileid = filey["id"]
 				accuracy = newAccuracy
+		
+		# Found a perfectly matching file
 		if accuracy == sum(version.values()): # I HATE THIS
 			print("\tPerfectly matched %s with id %s with accuracy %i/%i" % (release, fileid, accuracy, sum(version.values())))
 			return fileid # It's as good as we will find
+		
+		# Found an imperfect match
 		elif fileid != 0:
 			print("\tMatched %s with id %s with accuracy %i/%i" % (release, fileid, accuracy, sum(version.values())))
 			if outerAccuracy < accuracy:
 				print("\treplacing outer")
 				outerAccuracy = accuracy
 				outerFid = fileid
+		
+		# Found nothing
 		else:
 			print("\tNo %s found" % release)
+	
+	# Failed to find a match
 	if outerAccuracy == 0:
 		return 0
+
 	return outerFid
 
 
@@ -193,7 +208,7 @@ def downloadFile(url, out):
 	print()
 
 
-# It gets JSON data
+# Gets JSON data
 def getJSON(url):
 	r = requests.get(url)
 	return r.json()
