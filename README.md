@@ -4,7 +4,7 @@ There were not many scripts online that I could go to for guidance, so I'm putti
 
 Uses twitch app api and cfwidget.
 Big thanks to cfwidget for making any of this possible, I am very grateful.
-Without it we would not be able to tell if a file was for fabric or forge.
+Without it we would need to completely rely on the twitch api search.
 
 # Usage
 I hope that this is understandable.
