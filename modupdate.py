@@ -20,6 +20,7 @@ headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleW
 def main():
 	print("Gathering important stuff, this might take a while")
 	versionparam, mods = readData(modfile)
+	mods.sort()
 	nameLinks, notFound = getNameLinks(mods, versionparam)
 	pprint(nameLinks)
 	print("But we couldn't find:")
@@ -70,7 +71,7 @@ def getNameLinks(modlist, version):
 	# Build the name and id dict
 	nameIdDict = {}
 	notFound = []
-	for mod in modlist.sort():
+	for mod in modlist:
 		print("Finding %s" % mod)
 		
 		# Retrieve the JSON data
