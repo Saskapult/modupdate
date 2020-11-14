@@ -12,18 +12,31 @@ modfile = "moddata.txt"
 trackerfile = modfile.split(".")[0] + "_tracker.txt"
 modDir = "mods" # Don't use ./
 
-exreg = r"([^\/]*)$"
-apithing = "https://api.cfwidget.com/minecraft/mc-mods/"
-headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'} # Required to prevent 403
+# Required to prevent 403 with twitch api
+headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
 
 
-def main():
-	print("Gathering important stuff, this might take a while")
+def main():	
 	versionparam, mods = readData(modfile)
 	mods.sort()
+	
+	# Try to get mod pids but fall back to using the name if can't find
+	numMods = len(mods)
+	mids = []
+	print("Finding project ids, this may take a while")
+	for i in range(0, numMods):
+		print("Found %i/%i" % (i, numMods), end="\r")
+		pid = getProjectID(mods[i])
+		if pid != 0:
+			mids.append(pid)
+		else:
+			print("Could not find pid of %s, using fallback" % mods[i])
+			mids.append(mods[i])
+	print("Found %i/%i" % (numMods, numMods))
+
 	nameLinks, notFound = getNameLinks(mods, versionparam)
 	#pprint(nameLinks)
-	print("Couldn't find:")
+	print("Couldn't find files for:")
 	pprint(notFound)
 	downloadMods(nameLinks)
 	print("\nDone!")
@@ -52,7 +65,7 @@ def readData(path):
 		line = line.split('#',1)[0].strip()
 		if not line:
 			continue 
-		line = re.search(exreg, line, re.M|re.I).group(1).strip()
+		line = re.search(r"([^\/]*)$", line, re.M|re.I).group(1).strip()
 
 		filtered.append(line)
 	
@@ -66,18 +79,34 @@ def readData(path):
 	return minfo, filtered
 
 
+# Gets the project ID associated with the mod
+# Returns 0 if mod is not found
+# This prevents some cfwidget api stuff from becoming confused
+def getProjectID(url):
+	modname = linkEnd(url)
+	link = "https://addons-ecs.forgesvc.net/api/v2/addon/search?gameId=432&index=0&pageSize=255&searchFilter=%s&sectionId=6&sort=0" % modname
+	search = getJSON(link)
+
+	# Try to find matching link
+	for result in search:
+		if result["slug"] == modname:
+			return result["id"] # Found it!
+	# Nothing found
+	return 0
+
+
 # Gets the links to the files
+# Mods can contain name strings or project ids or both
 # Returns a dictionary mapping the names to the links
-def getNameLinks(modlist, version):
+def getNameLinks(mods, version):
 	# Build the name and id dict
 	nameIdDict = {}
 	notFound = {}
-	for mod in modlist:
+	for mod in mods:
 		print("Finding %s" % mod)
 		
 		# Retrieve the JSON data
-		link = apithing + mod
-		#print(link)
+		link = "https://api.cfwidget.com/minecraft/mc-mods/" + str(mod)
 		jdata = getJSON(link)
 		if "error" in jdata.keys():
 			textyyy = mod + " - " + jdata["error"]
@@ -88,7 +117,7 @@ def getNameLinks(modlist, version):
 		mid = jdata["id"]
 		fid = getFileId(jdata["files"], version)
 		if fid == 0: # Was unable to find a file
-			print("WARNING: Could not find %s" % mod)
+			print("WARNING: Could not find file for %s" % mod)
 			notFound[mod] = link
 			continue
 		
@@ -97,8 +126,7 @@ def getNameLinks(modlist, version):
 		directlink = requests.get(protodirectlink, headers=headers).text
 		
 		# Get the proper file name
-		filename = directlink.split("/")
-		filename = filename[len(filename)-1]
+		filename = linkEnd(directlink)
 		
 		# Make the entry
 		nameIdDict[filename] = directlink
@@ -201,6 +229,13 @@ def getFileId(files, version):
 	return outerFid
 
 
+# Get the text after the link's last "/"
+def linkEnd(url):
+	filename = url.split("/")
+	filename = filename[len(filename)-1]
+	return filename.strip()
+
+
 # Downloads a file
 def downloadFile(url, out):
 	print("DL: %s" % url)
@@ -210,7 +245,10 @@ def downloadFile(url, out):
 
 # Gets JSON data
 def getJSON(url):
-	r = requests.get(url)
+	r = requests.get(url, headers=headers)
+	if r.status_code != 200:
+		print("Problem accessing %s, response %i" % (url, r.status_code))
+		exit(1)
 	return r.json()
 
 
