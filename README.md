@@ -2,6 +2,10 @@
 I wanted to download things from curseforge automatically but this was not so easy.
 There were not many scripts online that I could go to for guidance, so I'm putting this up to maybe help people.
 
+Update:
+It seems that the api I have used redirects requests for certain fabric mods to their forge counterparts.
+I absolutely hate this.
+
 # Usage
 I hope that this is understandable.
 - Run "pip install -r requirements.txt" to install the required packages.

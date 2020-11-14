@@ -70,11 +70,12 @@ def getNameLinks(modlist, version):
 	# Build the name and id dict
 	nameIdDict = {}
 	notFound = []
-	for mod in modlist:
+	for mod in modlist.sort():
 		print("Finding %s" % mod)
 		
 		# Retrieve the JSON data
 		link = apithing + mod
+		print(link)
 		jdata = getJSON(link)
 		if "error" in jdata.keys():
 			textyyy = mod + " - " + jdata["error"]
