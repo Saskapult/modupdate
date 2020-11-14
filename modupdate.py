@@ -40,9 +40,10 @@ def readData(path):
 		# Version info reader
 		if line.startswith("{"):
 			try:
-				minfo = json.loads(line)
-			except ValueError:
-				print("Version data could not be interperted")
+				minfo = json.loads(line.strip())
+			except ValueError as e:
+				print("Version data could not be interperted: ")
+				print(e)
 				exit(1)
 			continue
 		
