@@ -12,8 +12,8 @@ I hope that this is understandable.
 - Create a new Minecraft instance and install Forge/Fabric.
 - Place the modupdate.py file in your ".minecraft" directory.
 - Create a file called "moddata.txt"
-- Put your version stuff in there. ({"1.16.2":1, "Fabric":1})
-- Fill the rest of it with curseforge links. (https://www.curseforge.com/minecraft/mc-mods/MODNAME)
+  - Define your versionparam veriable. (versionparam = {"1.16.2":1, "Fabric":1})
+  - Fill the rest of it with curseforge links. (https://www.curseforge.com/minecraft/mc-mods/MODNAME)
 - Make a sacrifice to the number gods to boost your chances of success.
 - Run the thing!
 

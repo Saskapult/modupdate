@@ -6,10 +6,9 @@ import re
 import requests
 import wget
 import os
+import sys
 
 
-modfile = "moddata.txt"
-trackerfile = modfile.split(".")[0] + "_tracker.txt"
 modDir = "mods" # Don't use ./
 
 # Required to prevent 403 with twitch api
@@ -17,6 +16,15 @@ headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleW
 
 
 def main():	
+	# Set up modlist file and the tracker file
+	if len(sys.argv) >= 2:
+		modfile = sys.argv[1]
+		print("Using specified modfile %s" % sys.argv[1])
+	else:
+		modfile = "moddata.txt"
+	trackerfile = modfile.split(".")[0] + "_tracker.txt"
+
+	# Get some good stuff
 	versionparam, mods = readData(modfile)
 	mods.sort()
 	
@@ -38,23 +46,37 @@ def main():
 	#pprint(nameLinks)
 	print("Couldn't find files for:")
 	pprint(notFound)
-	downloadMods(nameLinks)
+	downloadMods(nameLinks, trackerfile)
 	print("\nDone!")
 
 
 # Returns a list of mods to be downloaded
 def readData(path):
 	theFile = open(path)
-	contents = theFile.readlines()
+	lines = theFile.readlines()
 	theFile.close()
 	
 	filtered = []
 	minfo = {}
-	for line in contents:
-		# Version info reader
-		if line.startswith("{"):
+	i = 0
+	while i < len(lines):
+		line = lines[i]
+		# Read versionparam variable
+		if line.startswith("versionparam"):
+			jsonstr = line.split["= "][1]
+			# Loop until all json is read
+			bdiff = jsonstr.count("{") - jsonstr.count("}") # num '{' minus num '}'
+			loopcount = 0
+			while bdiff != 0:
+				newline = lines[i+loopcount]
+				bdiff += newline.count("{") - newline.count("}")
+				loopcount += 1
+				if loopcount > 10: # Don't loop forever
+					print("Read more than 10 lines if json, assuming error")
+					exit(1)
+			# Try to interpert the json
 			try:
-				minfo = json.loads(line.strip())
+				minfo = json.loads(jsonstr.strip())
 			except ValueError as e:
 				print("Version data could not be interperted: ")
 				print(e)
@@ -135,7 +157,7 @@ def getNameLinks(mods, version):
 
 
 # Sort out the downloading
-def downloadMods(nameLinks):
+def downloadMods(nameLinks, trackerfile):
 	# Make mod dir if not exist
 	if not os.path.exists(modDir):
 		os.mkdir(modDir)
