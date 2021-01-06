@@ -1,0 +1,11 @@
+base_url = "https://addons-ecs.forgesvc.net/api/v2/addon/"
+begin = "?"
+sep = "&"
+micecraftid = "gameId=432"
+filter = "searchFilter="
+sort = "sort=2"
+
+index is useless, just offsets the list
+
+
+link = "https://addons-ecs.forgesvc.net/api/v2/addon/search?gameId=432&index=0&pageSize=255&searchFilter=%s&sectionId=6&sort=0" % modname

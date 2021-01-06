@@ -16,6 +16,7 @@ headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleW
 
 
 def main():	
+
 	# Set up modlist file and the tracker file
 	if len(sys.argv) >= 2:
 		modfile = sys.argv[1]
@@ -24,11 +25,13 @@ def main():
 		modfile = "moddata.txt"
 	trackerfile = modfile.split(".")[0] + "_tracker.txt"
 
-	# Get some good stuff
+	# Read the data from the file
 	versionparam, mods = readData(modfile)
+	pprint(versionparam)
+	# Sort the mod names
 	mods.sort()
 	
-	# Try to get mod pids but fall back to using the name if can't find
+	# Try to get mod pids, fall back to using the name if can't find
 	numMods = len(mods)
 	mids = []
 	print("Finding project ids, this may take a while")
@@ -41,6 +44,8 @@ def main():
 			print("Could not find pid of %s, using fallback" % mods[i])
 			mids.append(mods[i])
 	print("Found %i/%i" % (numMods, numMods))
+
+	exit(0)
 
 	nameLinks, notFound = getNameLinks(mods, versionparam)
 	#pprint(nameLinks)
@@ -60,10 +65,17 @@ def readData(path):
 	minfo = {}
 	i = 0
 	while i < len(lines):
+		
 		line = lines[i]
+		# Comment filtration
+		line = line.split('#',1)[0].strip()
+		if not line:
+			i += 1
+			continue 
+
 		# Read versionparam variable
 		if line.startswith("versionparam"):
-			jsonstr = line.split["= "][1]
+			jsonstr = line.split("= ")[1]
 			# Loop until all json is read
 			bdiff = jsonstr.count("{") - jsonstr.count("}") # num '{' minus num '}'
 			loopcount = 0
@@ -81,15 +93,14 @@ def readData(path):
 				print("Version data could not be interperted: ")
 				print(e)
 				exit(1)
+			i += loopcount+1
 			continue
 		
-		# Comment filtration
-		line = line.split('#',1)[0].strip()
-		if not line:
-			continue 
+		# Regular operation
 		line = re.search(r"([^\/]*)$", line, re.M|re.I).group(1).strip()
-
 		filtered.append(line)
+		i += 1
+
 	
 	print("Read %i mods" % len(filtered))
 	
@@ -102,18 +113,29 @@ def readData(path):
 
 
 # Gets the project ID associated with the mod
+# Uses addons-ecs.forgesvc.net/api/v2/
 # Returns 0 if mod is not found
-# This prevents some cfwidget api stuff from becoming confused
+# This is necessary to prevent the cfwidget api from becoming confused
 def getProjectID(url):
-	modname = linkEnd(url)
-	link = "https://addons-ecs.forgesvc.net/api/v2/addon/search?gameId=432&index=0&pageSize=255&searchFilter=%s&sectionId=6&sort=0" % modname
+	modname = endOfLink(url)
+
+	link = "https://addons-ecs.forgesvc.net/api/v2/addon/search?gameId=432" # Searching minecraft
+	link += "&sectionId=6" # For a mod
+	link += "&searchFilter=%s" % modname # With this name
+	link += "&sort=3" # order by name (hopefully)
+
 	search = getJSON(link)
 
+	print("%s is:" % modname)
 	# Try to find matching link
 	for result in search:
-		if result["slug"] == modname:
+		slug = result["slug"]
+		print("\t%s? \t(%s)" % (str(result["id"]), slug) )
+		if slug == modname:
+			print("\tYes it is")
 			return result["id"] # Found it!
 	# Nothing found
+	print("\tNOT FOUND")
 	return 0
 
 
@@ -148,7 +170,7 @@ def getNameLinks(mods, version):
 		directlink = requests.get(protodirectlink, headers=headers).text
 		
 		# Get the proper file name
-		filename = linkEnd(directlink)
+		filename = endOfLink(directlink)
 		
 		# Make the entry
 		nameIdDict[filename] = directlink
@@ -252,7 +274,7 @@ def getFileId(files, version):
 
 
 # Get the text after the link's last "/"
-def linkEnd(url):
+def endOfLink(url):
 	filename = url.split("/")
 	filename = filename[len(filename)-1]
 	return filename.strip()
